@@ -3,7 +3,7 @@
  * by Louis Thiery
  *
  * compile for Python using: "python setup.py build"
- * compiled module will be in "build/lib.linux-armv6l-2.7/spi.so" 
+ * compiled module will be in "./build/lib.linux-armv6l-2.7/spi.so" 
  *
  * SPI testing utility (using spidev driver)
  *
@@ -38,6 +38,7 @@ static uint8_t mode;
 static uint8_t bits = 8;
 static uint32_t speed = 500000;
 static uint16_t delay;
+static uint32_t bytesPerMessage=8;
 
 int ret = 0;
 int fd;
@@ -57,7 +58,7 @@ static PyObject* initialize(PyObject* self, PyObject* args)
 		if(!PyArg_ParseTuple(args, "siii", &modeString, &bits, &speed, &delay))
 	*/
 	//this works at least but I don't know what the different modes are by integer
-	if( !(PyArg_ParseTuple(args,"") || PyArg_ParseTuple(args,"iiii", &mode, &bits, &speed, &delay)) )
+	if( !(PyArg_ParseTuple(args,"") || PyArg_ParseTuple(args,"iiii", &mode, &bytesPerMessage, &speed, &delay)) )
 		return NULL;
 	/*
 	uint8_t i;
@@ -147,13 +148,13 @@ static PyObject* transfer(PyObject* self, PyObject* args)
 
 	uint8_t tupleSize = PyTuple_Size(pyObj);
 
-	uint8_t tx[bits];
-	uint8_t rx[bits];
+	uint8_t tx[bytesPerMessage];
+	uint8_t rx[bytesPerMessage];
 	PyObject* item;
 
 	uint8_t i=0;
 
-	while(i<bits){
+	while(i<bytesPerMessage){
 		if(i<tupleSize){
 			item = PyTuple_GetItem(pyObj, i);
 			if(!PyInt_Check(item)){
@@ -172,7 +173,7 @@ static PyObject* transfer(PyObject* self, PyObject* args)
 	struct spi_ioc_transfer tr = {
 		.tx_buf = (unsigned long)tx,
 		.rx_buf = (unsigned long)rx,
-		.len = bits,
+		.len = bytesPerMessage,
 		.delay_usecs = delay,
 		.speed_hz = speed,
 		.bits_per_word = bits,
