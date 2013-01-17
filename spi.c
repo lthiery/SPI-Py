@@ -58,8 +58,10 @@ static PyObject* initialize(PyObject* self, PyObject* args)
 		if(!PyArg_ParseTuple(args, "siii", &modeString, &bits, &speed, &delay))
 	*/
 	//this works at least but I don't know what the different modes are by integer
+
 	if( !(PyArg_ParseTuple(args,"") || PyArg_ParseTuple(args,"iiii", &mode, &bytesPerMessage, &speed, &delay)) )
 		return NULL;
+	PyErr_Clear();
 	/*
 	uint8_t i;
 	for(i=0;i<sizeof(modeString) / sizeof(char);i++){
@@ -183,7 +185,7 @@ static PyObject* transfer(PyObject* self, PyObject* args)
 	if (ret < 1)
 		pabort("can't send spi message");
 
-	/*
+/*
 	printf("Received: \n");
 	for (ret = 0; ret < ARRAY_SIZE; ret++) {
 		if (!(ret % 4) && ret!=0)
@@ -191,10 +193,10 @@ static PyObject* transfer(PyObject* self, PyObject* args)
 		printf("%.2X ", rx[ret]);
 	}
 	puts("");
-	*/
+*/
 
-	pyObj = PyTuple_New(bits);
-	for(i=0;i<bits;i++)
+	pyObj = PyTuple_New(bytesPerMessage);
+	for(i=0;i<bytesPerMessage;i++)
 		PyTuple_SetItem(pyObj, i, Py_BuildValue("i",rx[i]));
 
 	return pyObj;
