@@ -1,9 +1,10 @@
 /* SPI testing utility (see copyright beow)
  *	adapted for use in Python
- * by Louis Thiery
+ * 	by Louis Thiery
+ * 	Lots more flexibility and cleanup by Connor Wolf (imaginaryindustries.com)
  *
  * compile for Python using: "python setup.py build"
- * compiled module will be in "./build/lib.linux-armv6l-2.7/spi.so" 
+ * compiled module will be in "./build/lib.linux-armv6l-2.7/spi.so"
  *
  * SPI testing utility (using spidev driver)
  *
@@ -38,144 +39,136 @@ static uint8_t mode;
 static uint8_t bits = 8;
 static uint32_t speed = 500000;
 static uint16_t delay;
-static uint32_t bytesPerMessage=8;
 
 int ret = 0;
 int fd;
 
-static PyObject* initialize(PyObject* self, PyObject* args)
+
+static PyObject* openSPI(PyObject *self, PyObject *args, PyObject *kwargs)
 {
 
-	/*want to overload initialize call so that we can do:
-		initialize()
-		initialize("mode-string")
-		initialize(bits,speed))
-		initialize( ("mode-string"),bits,speed,delay)
-	 Tried or'ing all of these but it didn't work:
-		char *modeString;
-		if(!PyArg_ParseTuple(args,"s",&modeString))
-		if(!PyArg_ParseTuple(args,"ii",&bits,&speed))
-		if(!PyArg_ParseTuple(args, "siii", &modeString, &bits, &speed, &delay))
-	*/
-	//this works at least but I don't know what the different modes are by integer
+	static char* kwlist[] = {"device", "mode", "bits", "speed", "delay", NULL};
 
-	if( !(PyArg_ParseTuple(args,"") || PyArg_ParseTuple(args,"iiii", &mode, &bytesPerMessage, &speed, &delay)) )
+	// Adding some sort of mode parsing would probably be a nice idea for the future, so you don't have to specify it as a bitfield
+	// stuffed into an int.
+	// For the moment the default mode ("0"), will probably work for 99% of people who need a SPI interface, so I'm not working on that
+	//
+
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|siiii:keywords", kwlist, &device, &mode, &bits, &speed, &delay))
 		return NULL;
+	// It's not clearly documented, but it seems that PyArg_ParseTupleAndKeywords basically only modifies the values passed to it if the
+	// keyword pertaining to that value is passed to the function. As such, the defaults specified by the variable definition are used
+	// unless you pass a kwd argument.
+	// Note that there isn't any proper bounds-checking, so if you pass a value that exceeds the variable size, it's just truncated before
+	// being stuffed into  the avasilable space. For example, passing a bits-per-word of 500 gets truncated to 244. Unfortunately, the
+	// PyArg_ParseTupleAndKeywords function only seems to support ints of 32 bits.
+
 	PyErr_Clear();
-	/*
-	uint8_t i;
-	for(i=0;i<sizeof(modeString) / sizeof(char);i++){
-		switch(modeString[i]){
-			case 'l':
-				mode |= SPI_LOOP;
-				break;
-			case 'H':
-				mode |= SPI_CPHA;
-				break;
-			case 'O':
-				mode |= SPI_CPOL;
-				break;
-			case 'L':
-				mode |= SPI_LSB_FIRST;
-				break;
-			case 'C':
-				mode |= SPI_CS_HIGH;
-				break;
-			case '3':
-				mode |= SPI_3WIRE;
-				break;
-			case 'N':
-				mode |= SPI_NO_CS;
-				break;
-			case 'R':
-				mode |= SPI_READY;
-				break;
-			default:
-				break;
-		}
-	}
-	*/
+
+	// printf("Mode: %i, Bits: %i, Speed: %i, Delay: %i\n", mode, bits, speed, delay);
+
+
+
 	fd = open(device, O_RDWR);
-        if (fd < 0)
-                pabort("can't open device");
+	if (fd < 0)
+		pabort("can't open device");
+
 	/*
-         * spi mode
-         */
-        ret = ioctl(fd, SPI_IOC_WR_MODE, &mode);
-        if (ret == -1)
-                pabort("can't set spi mode");
+	 * Setup SPI mode
+	 */
+	ret = ioctl(fd, SPI_IOC_WR_MODE, &mode);
+	if (ret == -1)
+		pabort("can't set spi mode");
 
-        ret = ioctl(fd, SPI_IOC_RD_MODE, &mode);
-        if (ret == -1)
-                pabort("can't get spi mode");
+	ret = ioctl(fd, SPI_IOC_RD_MODE, &mode);
+	if (ret == -1)
+		pabort("can't get spi mode");
 
-        /*
-         * bits per word
-         */
-        ret = ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, &bits);
-        if (ret == -1)
-                pabort("can't set bits per word");
+	/*
+	 * bits per word
+	 */
+	ret = ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, &bits);
+	if (ret == -1)
+		pabort("can't set bits per word");
 
-        ret = ioctl(fd, SPI_IOC_RD_BITS_PER_WORD, &bits);
-        if (ret == -1)
-                pabort("can't get bits per word");
+	ret = ioctl(fd, SPI_IOC_RD_BITS_PER_WORD, &bits);
+	if (ret == -1)
+		pabort("can't get bits per word");
 
-        /*
-         * max speed hz
-         */
-        ret = ioctl(fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed);
-        if (ret == -1)
-                pabort("can't set max speed hz");
+	/*
+	 * max speed hz
+	 */
+	ret = ioctl(fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed);
+	if (ret == -1)
+		pabort("can't set max speed hz");
 
-        ret = ioctl(fd, SPI_IOC_RD_MAX_SPEED_HZ, &speed);
-        if (ret == -1)
-                pabort("can't get max speed hz");
+	ret = ioctl(fd, SPI_IOC_RD_MAX_SPEED_HZ, &speed);
+	if (ret == -1)
+		pabort("can't get max speed hz");
 
-        printf("spi mode: %d\n", mode);
-        printf("bits per word: %d\n", bits);
-        printf("max speed: %d Hz (%d KHz)\n", speed, speed/1000);
-	printf("delay %d\n",delay);
+	// Stuff the various initilization parameters into a dict, and return that.
+	// Note that the returned values may not be completely real. It seems that, at least for the speed value,
+	// the hardware only has several possible settings (250000, 500000, 1000000, etc...) Strangely enough, the
+	// ioctl for setting the speed *returns the speed you specify*. However, the hardware seems to default to the
+	// closest avalable value *below* the specified rate. (i.e. you will never get a speed faster then you spec),
+	// but you may get a slower value.
 
-	Py_RETURN_NONE;
+	//It would probably be a good idea to bin-down the passed arguement to the available values, and return
+	// that.
+
+	PyObject* retDict;
+	retDict = PyDict_New();
+
+	PyDict_SetItem(retDict, PyString_FromString("mode"), PyInt_FromLong((long)mode));
+	PyDict_SetItem(retDict, PyString_FromString("bits"), PyInt_FromLong((long)bits));
+	PyDict_SetItem(retDict, PyString_FromString("speed"), PyInt_FromLong((long)speed));
+	PyDict_SetItem(retDict, PyString_FromString("delay"), PyInt_FromLong((long)delay));
+
+
+	return retDict;
 }
 
 
 
-static PyObject* transfer(PyObject* self, PyObject* args)
+static PyObject* transfer(PyObject* self, PyObject* arg)
 {
-	PyObject* pyObj;
+	PyObject* transferTuple;
 
-	if(!PyArg_ParseTuple(args, "O", &pyObj))
-		return NULL;
+	if(!PyArg_ParseTuple(arg, "O", &transferTuple))		// "O" - Gets non-NULL borrowed reference to Python argument.
+		return NULL;					// As far as I can tell, it's mostly just copying arg[0] into transferTuple
+								// and making sure at least one arg has been passed (I think)
 
-	uint8_t tupleSize = PyTuple_Size(pyObj);
+	if(!PyTuple_Check(transferTuple))			// The only argument we support is a single tuple.
+		pabort("Only accepts a single tuple as an argument");
 
-	uint8_t tx[bytesPerMessage];
-	uint8_t rx[bytesPerMessage];
-	PyObject* item;
+
+	uint32_t tupleSize = PyTuple_Size(transferTuple);
+
+	uint8_t tx[tupleSize];
+	uint8_t rx[tupleSize];
+	PyObject* tempItem;
 
 	uint8_t i=0;
 
-	while(i<bytesPerMessage){
-		if(i<tupleSize){
-			item = PyTuple_GetItem(pyObj, i);
-			if(!PyInt_Check(item)){
-				printf("non-integer contained in tuple");
-				exit(1);
-			}
-			tx[i] = PyFloat_AsDouble(item);
+	while(i < tupleSize)
+	{
+		tempItem = PyTuple_GetItem(transferTuple, i);		//
+		if(!PyInt_Check(tempItem))
+		{
+			printf("non-integer contained in tuple");
+			exit(1);
 		}
-		else
-			tx[i] = 0;
+		tx[i] = (uint8_t)PyInt_AsSsize_t(tempItem);
 
-		printf("%d ", tx[i++]);
+		i++;
+
 	}
-	puts("");
 
 	struct spi_ioc_transfer tr = {
 		.tx_buf = (unsigned long)tx,
 		.rx_buf = (unsigned long)rx,
-		.len = bytesPerMessage,
+		.len = tupleSize,
 		.delay_usecs = delay,
 		.speed_hz = speed,
 		.bits_per_word = bits,
@@ -185,25 +178,15 @@ static PyObject* transfer(PyObject* self, PyObject* args)
 	if (ret < 1)
 		pabort("can't send spi message");
 
-/*
-	printf("Received: \n");
-	for (ret = 0; ret < ARRAY_SIZE; ret++) {
-		if (!(ret % 4) && ret!=0)
-			puts("");
-		printf("%.2X ", rx[ret]);
-	}
-	puts("");
-*/
+	transferTuple = PyTuple_New(tupleSize);
+	for(i=0;i<tupleSize;i++)
+		PyTuple_SetItem(transferTuple, i, Py_BuildValue("i",rx[i]));
 
-	pyObj = PyTuple_New(bytesPerMessage);
-	for(i=0;i<bytesPerMessage;i++)
-		PyTuple_SetItem(pyObj, i, Py_BuildValue("i",rx[i]));
-
-	return pyObj;
+	return transferTuple;
 }
 
 
-static PyObject* end(PyObject* self,PyObject* args)
+static PyObject* closeSPI(PyObject* self,PyObject* args)
 {
 	close(fd);
 	Py_RETURN_NONE;
@@ -211,9 +194,9 @@ static PyObject* end(PyObject* self,PyObject* args)
 
 static PyMethodDef SpiMethods[] =
 {
-	{"initialize", initialize, METH_VARARGS, "Initializing"},
-	{"transfer", transfer, METH_VARARGS, "Sending."},
-	{"end", end, METH_NOARGS, "End."},
+	{"openSPI", openSPI, METH_KEYWORDS, "Open SPI Port."},
+	{"transfer", transfer, METH_VARARGS, "Transfer data."},
+	{"closeSPI", closeSPI, METH_NOARGS, "Close SPI port."},
 	{NULL, NULL, 0, NULL}
 };
 
@@ -221,5 +204,5 @@ PyMODINIT_FUNC
 
 initspi(void)
 {
-     (void) Py_InitModule("spi", SpiMethods);
+	(void) Py_InitModule("spi", SpiMethods);
 }
