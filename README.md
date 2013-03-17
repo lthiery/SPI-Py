@@ -1,7 +1,7 @@
 SPI-Py: Hardware SPI as a C Extension for Python
 ======
 
-COPYRIGHT (C) 2012 Louis Thiery. All rights reserved.
+COPYRIGHT (C) 2012 Louis Thiery. All rights reserved. Further work by Connor Wolf.
 This work is released under Attribution-ShareAlike 3.0 Unported (CC BY-SA 3.0)
 For details, visit: http://creativecommons.org/licenses/by-sa/3.0/
 
