@@ -140,7 +140,7 @@ static PyObject* transfer(PyObject* self, PyObject* arg)
 								// and making sure at least one arg has been passed (I think)
 
 	if(!PyTuple_Check(transferTuple))			// The only argument we support is a single tuple.
-		pabort("Only accepts a single tuple as an argument");
+		pabort("Only accepts a single tuple as an argument\n");
 
 
 	uint32_t tupleSize = PyTuple_Size(transferTuple);
@@ -156,8 +156,7 @@ static PyObject* transfer(PyObject* self, PyObject* arg)
 		tempItem = PyTuple_GetItem(transferTuple, i);		//
 		if(!PyInt_Check(tempItem))
 		{
-			printf("non-integer contained in tuple");
-			exit(1);
+			pabort("non-integer contained in tuple\n");
 		}
 		tx[i] = (uint8_t)PyInt_AsSsize_t(tempItem);
 
