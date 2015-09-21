@@ -120,10 +120,17 @@ static PyObject* openSPI(PyObject *self, PyObject *args, PyObject *kwargs)
 	PyObject* retDict;
 	retDict = PyDict_New();
 
+#if PY_MAJOR_VERSION >= 3
+	PyDict_SetItem(retDict, PyBytes_FromString("mode"), PyLong_FromLong((long)mode));
+	PyDict_SetItem(retDict, PyBytes_FromString("bits"), PyLong_FromLong((long)bits));
+	PyDict_SetItem(retDict, PyBytes_FromString("speed"), PyLong_FromLong((long)speed));
+	PyDict_SetItem(retDict, PyBytes_FromString("delay"), PyLong_FromLong((long)delay));
+#else
 	PyDict_SetItem(retDict, PyString_FromString("mode"), PyInt_FromLong((long)mode));
 	PyDict_SetItem(retDict, PyString_FromString("bits"), PyInt_FromLong((long)bits));
 	PyDict_SetItem(retDict, PyString_FromString("speed"), PyInt_FromLong((long)speed));
 	PyDict_SetItem(retDict, PyString_FromString("delay"), PyInt_FromLong((long)delay));
+#endif
 
 
 	return retDict;
@@ -154,11 +161,19 @@ static PyObject* transfer(PyObject* self, PyObject* arg)
 	while(i < tupleSize)
 	{
 		tempItem = PyTuple_GetItem(transferTuple, i);		//
+#if PY_MAJOR_VERSION >= 3
+		if(!PyLong_Check(tempItem))
+#else
 		if(!PyInt_Check(tempItem))
+#endif
 		{
 			pabort("non-integer contained in tuple\n");
 		}
+#if PY_MAJOR_VERSION >= 3
+		tx[i] = (uint8_t)PyLong_AsSsize_t(tempItem);
+#else
 		tx[i] = (uint8_t)PyInt_AsSsize_t(tempItem);
+#endif
 
 		i++;
 
@@ -194,15 +209,41 @@ static PyObject* closeSPI(PyObject* self,PyObject* args)
 
 static PyMethodDef SpiMethods[] =
 {
-	{"openSPI", openSPI, METH_KEYWORDS, "Open SPI Port."},
-	{"transfer", transfer, METH_VARARGS, "Transfer data."},
-	{"closeSPI", closeSPI, METH_NOARGS, "Close SPI port."},
+	{"openSPI", (PyCFunction)openSPI, METH_VARARGS | METH_KEYWORDS, "Open SPI Port."},
+	{"transfer", (PyCFunction)transfer, METH_VARARGS, "Transfer data."},
+	{"closeSPI", (PyCFunction)closeSPI, METH_NOARGS, "Close SPI port."},
 	{NULL, NULL, 0, NULL}
 };
 
+#if PY_MAJOR_VERSION >= 3
+    static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT,
+        "spi",     /* m_name */
+        "spi library",  /* m_doc */
+        -1,                  /* m_size */
+        SpiMethods,    /* m_methods */
+        NULL,                /* m_reload */
+        NULL,                /* m_traverse */
+        NULL,                /* m_clear */
+        NULL,                /* m_free */
+    };
+#endif
+
 PyMODINIT_FUNC
 
+#if PY_MAJOR_VERSION >= 3
+PyInit_spi(void)
+#else
 initspi(void)
+#endif
 {
+#if PY_MAJOR_VERSION >= 3
+        PyObject *module = PyModule_Create(&moduledef);
+#else
 	(void) Py_InitModule("spi", SpiMethods);
+#endif
+
+#if PY_MAJOR_VERSION >= 3
+    return module;
+#endif
 }
