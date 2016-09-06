@@ -186,7 +186,7 @@ static PyObject* transfer(PyObject* self, PyObject* arg)
 		.delay_usecs = delay,
 		.speed_hz = speed,
 		.bits_per_word = bits,
-                .cs_change = 1,
+                .cs_change = 0,
 	};
 
 	ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
