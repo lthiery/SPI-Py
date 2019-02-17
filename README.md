@@ -11,12 +11,12 @@ This program is distributed for educational purposes only and is no way suitable
 
 ## Instructions
 
-1. Clone or download this repository, navigate to the SPI-Py directory, and nstall the library using the following command. Use python3 if installing for Python 3.
+1. Clone or download this repository, navigate to the SPI-Py directory, and install the library using the following command. Use python3 if installing for Python 3.
 <pre>
 > sudo python setup.py install
 </pre>
 
-2. Make sure the SPI interface is enabled for your raspberry pi. This can be done using the raspi-config utility.
+2. Make sure the SPI interface is enabled for your Raspberry Pi. This can be done using the raspi-config utility.
 <pre>
 > sudo raspi-config
 </pre>
@@ -24,8 +24,8 @@ This program is distributed for educational purposes only and is no way suitable
 3. This module provides three functions for communicating with SPI devices:
 <pre>
 dev_dictionary = spi.openSPI(kwargs)
-data = spi.transfer(device_dictionary, data)
-spi.closeSPI(dev_decitionary)
+data = spi.transfer(dev_dictionary, data)
+spi.closeSPI(dev_dictionary)
 </pre>
 
 The next section covers these in detail.
@@ -39,11 +39,11 @@ The below commands can be found in the (test_script.py)[test_script.py] file.
 import spi
 </pre>
 
-### Initialize one of two SPI devices:
+### Open the file descriptor to the SPI device with one of two chip selects:
 <pre>
 device_0 = spi.openSPI(device="/dev/spidev0.0",mode=0,speed=500000,bits=8,delay=0)
 </pre>
-The device keyword can be either "/dev/spidev0.0" or "/dev/spidev0.1". The difference refers to which chip select pin is used by the SPI device driver on your pi. The mode keyword can be 0,1,2, or 3, and many SPI devices can go operate up to 8000000 Hz, however it is recommended to check your data sheet. See the (Raspberry Pi docs)[https://www.raspberrypi.org/documentation/hardware/raspberrypi/spi/README.md] for more information.
+The device keyword can be either "/dev/spidev0.0" or "/dev/spidev0.1". The difference refers to which chip select pin is used by the SPI device driver. The mode keyword can be 0,1,2, or 3, and many SPI devices can operate up to 8000000 Hz speed, however it is recommended to check your data sheet. See the (Raspberry Pi docs)[https://www.raspberrypi.org/documentation/hardware/raspberrypi/spi/README.md] for detailed explanation of these parameters.
 
 ### Use the returned device handle to conduct an SPI transaction
 <pre>
@@ -56,7 +56,7 @@ The above would write the 3 bytes contained in data_out and copy the received da
 To verify that this works connect GPIO 10 (MOSI, physical pin 19) to GPIO 9 (MISO, physical pin 21) 
 in a loop back. You should see that data_out now equals data_back.
 
-### Close the spi device
+### Close the file descriptor for your SPI device
 <pre>
 spi.closeSPI(device_0)
 </pre>
