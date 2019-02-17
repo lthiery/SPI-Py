@@ -139,7 +139,7 @@ static PyObject* openSPI(PyObject *self, PyObject *args, PyObject *kwargs) {
 
 
 
-static PyObject* transfer(PyObject* self, PyObject* arg) {
+static PyObject* transfer(PyObject* self, PyObject* args) {
 
     uint8_t mode;
     uint8_t bits = 8;
