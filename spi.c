@@ -51,12 +51,31 @@ static PyObject* openSPI(PyObject *self, PyObject *args, PyObject *kwargs) {
 	// Adding some sort of mode parsing would probably be a nice idea for the future, so you don't have to specify it as a bitfield
 	// stuffed into an int.
 	// For the moment the default mode ("0"), will probably work for 99% of people who need a SPI interface, so I'm not working on that
-	//
-
-
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|siiii:keywords", kwlist, &device, &mode, &bits, &speed, &delay)) {
 		return NULL;
 	}
+
+	//
+	// Parse mode of SPI device, option 0, 1, 2, 3
+	//
+	uint8_t spi_mode;
+	switch(mode) {
+		case 0:
+			spi_mode = SPI_MODE_0;
+			break;
+		case 1:
+			spi_mode = SPI_MODE_1;
+			break;
+		case 2:
+			spi_mode = SPI_MODE_2;
+			break;
+		case 3:
+			spi_mode = SPI_MODE_3;
+			break;
+		default:
+			spi_mode = SPI_MODE_0;
+	}
+
 	// It's not clearly documented, but it seems that PyArg_ParseTupleAndKeywords basically only modifies the values passed to it if the
 	// keyword pertaining to that value is passed to the function. As such, the defaults specified by the variable definition are used
 	// unless you pass a kwd argument.
@@ -73,15 +92,13 @@ static PyObject* openSPI(PyObject *self, PyObject *args, PyObject *kwargs) {
 		pabort("can't open device");
 	}
 
-	/*
-	 * Setup SPI mode
-	 */
-	ret = ioctl(fd, SPI_IOC_WR_MODE, &mode);
+	// Set mode of SPI device
+	ret = ioctl(fd, SPI_IOC_WR_MODE, &spi_mode);
 	if (ret == -1) {
 		pabort("can't set spi mode");
 	}
 
-	ret = ioctl(fd, SPI_IOC_RD_MODE, &mode);
+	ret = ioctl(fd, SPI_IOC_RD_MODE, &spi_mode);
 	if (ret == -1) {
 		pabort("can't get spi mode");
 	}
@@ -139,9 +156,8 @@ static PyObject* openSPI(PyObject *self, PyObject *args, PyObject *kwargs) {
 
 
 
-static PyObject* transfer(PyObject* self, PyObject* arg) {
+static PyObject* transfer(PyObject* self, PyObject* args) {
 
-    uint8_t mode;
     uint8_t bits = 8;
     uint32_t speed = 500000;
     uint16_t delay;
@@ -151,7 +167,6 @@ static PyObject* transfer(PyObject* self, PyObject* arg) {
     
 	PyObject* dict;
     PyObject* transferTuple;
-
 
 	// "O" - Gets non-NULL borrowed reference to Python argument.
 	// As far as I can tell, it's mostly just copying arg[0] into transferTuple
@@ -172,13 +187,11 @@ static PyObject* transfer(PyObject* self, PyObject* arg) {
    // Declare these variable separately so we can manually decrease reference
    // counts when finished and free up memory
 #if PY_MAJOR_VERSION >= 3
-    PyObject* p_mode = PyBytes_FromString("mode");
     PyObject* p_bits = PyBytes_FromString("bits");
     PyObject* p_speed = PyBytes_FromString("speed");
     PyObject* p_delay = PyBytes_FromString("delay");
     PyObject* p_fd = PyBytes_FromString("fd");
 #else
-	PyObject* p_mode = PyString_FromString("mode");
     PyObject* p_bits = PyString_FromString("bits");
     PyObject* p_speed = PyString_FromString("speed");
     PyObject* p_delay = PyString_FromString("delay");
@@ -187,13 +200,11 @@ static PyObject* transfer(PyObject* self, PyObject* arg) {
 
 	// Get SPI device parameters to use
 #if PY_MAJOR_VERSION >= 3
-    mode = (uint8_t) PyLong_AsUnsignedLong(PyDict_GetItem( dict, p_mode  ));
     bits = (uint8_t) PyLong_AsUnsignedLong(PyDict_GetItem( dict, p_bits ));
     speed = (uint32_t) PyLong_AsUnsignedLong(PyDict_GetItem( dict, p_speed ));
     delay = (uint16_t) PyLong_AsUnsignedLong(PyDict_GetItem( dict, p_delay ));
     fd = (int) PyLong_AsLong(PyDict_GetItem( dict, p_fd ));
 #else
-    mode = (uint8_t) PyInt_AsUnsignedLongMask(PyDict_GetItem( dict, p_mode  ));
     bits = (uint8_t) PyInt_AsUnsignedLongMask(PyDict_GetItem( dict, p_bits ));
     speed = (uint32_t) PyInt_AsUnsignedLongMask(PyDict_GetItem( dict, p_speed ));
     delay = (uint16_t) PyInt_AsUnsignedLongMask(PyDict_GetItem( dict, p_delay ));
@@ -201,7 +212,6 @@ static PyObject* transfer(PyObject* self, PyObject* arg) {
 #endif
 
 	// Decrease reference counts for tempoerary variables, freeing memory
-    Py_XDECREF(p_mode);
     Py_XDECREF(p_bits);
     Py_XDECREF(p_speed);
     Py_XDECREF(p_delay);
