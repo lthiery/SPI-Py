@@ -8,21 +8,31 @@ def transact():
 	device_0 =  spi.openSPI(device="/dev/spidev0.0",
 							mode=0,
 							speed=1000000)
+							
+	print("**")
+	print(device_0)
 
-	# This is not necessary, not just demonstrate loop-back
+    # This is not necessary, not just demonstrate loop-back
 	data_back = (0x00, 0x00, 0x00)
 
 	data_back = spi.transfer(device_0, data_out)
 	print("Received from device 0:")
 	print(data_back)
 	spi.closeSPI(device_0)
+	print(device_0)
+	print("**")
 
-g_run = True
 
-while g_run:
-	try:
-		transact()
+def main():
 
-	except KeyboardInterrupt:
-		g_run = False
+	g_run = True
 
+	while g_run:
+		try:
+			transact()
+
+		except KeyboardInterrupt:
+			g_run = False
+
+if __name__ == "__main__":
+	main()

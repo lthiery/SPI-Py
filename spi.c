@@ -142,7 +142,7 @@ static PyObject* openSPI(PyObject *self, PyObject *args, PyObject *kwargs) {
     PyObject* key_delay = PyBytes_FromString("delay");
     PyObject* key_fd = PyBytes_FromString("fd");
 
-	PyObject* val_mode = PyLong_FromLong((long)mode);
+	PyObject* val_mode = PyLong_FromLong((long)spi_mode);
 	PyObject* val_bits = PyLong_FromLong((long)bits);
 	PyObject* val_speed = PyLong_FromLong((long)speed);
 	PyObject* val_delay = PyLong_FromLong((long)delay);
@@ -154,7 +154,7 @@ static PyObject* openSPI(PyObject *self, PyObject *args, PyObject *kwargs) {
     PyObject* key_delay = PyString_FromString("delay");
     PyObject* key_fd = PyString_FromString("fd");
 
-	PyObject* val_mode = PyInt_FromLong((long)mode);
+	PyObject* val_mode = PyInt_FromLong((long)spi_mode);
 	PyObject* val_bits = PyInt_FromLong((long)bits);
 	PyObject* val_speed = PyInt_FromLong((long)speed);
 	PyObject* val_delay = PyInt_FromLong((long)delay);
