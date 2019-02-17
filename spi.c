@@ -34,16 +34,6 @@ static void pabort(const char *s)
 	abort();
 }
 
-static const char *device = "/dev/spidev0.0";
-static uint8_t mode;
-static uint8_t bits = 8;
-static uint32_t speed = 500000;
-static uint16_t delay;
-
-int ret = 0;
-int fd;
-
-
 static PyObject* openSPI(PyObject *self, PyObject *args, PyObject *kwargs)
 {
 
@@ -55,8 +45,9 @@ static PyObject* openSPI(PyObject *self, PyObject *args, PyObject *kwargs)
 	//
 
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|siiii:keywords", kwlist, &device, &mode, &bits, &speed, &delay))
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|siiii:keywords", kwlist, &device, &mode, &bits, &speed, &delay)) {
 		return NULL;
+	}
 	// It's not clearly documented, but it seems that PyArg_ParseTupleAndKeywords basically only modifies the values passed to it if the
 	// keyword pertaining to that value is passed to the function. As such, the defaults specified by the variable definition are used
 	// unless you pass a kwd argument.
@@ -68,22 +59,23 @@ static PyObject* openSPI(PyObject *self, PyObject *args, PyObject *kwargs)
 
 	// printf("Mode: %i, Bits: %i, Speed: %i, Delay: %i\n", mode, bits, speed, delay);
 
-
-
 	fd = open(device, O_RDWR);
-	if (fd < 0)
+	if (fd < 0) {
 		pabort("can't open device");
+	}
 
 	/*
 	 * Setup SPI mode
 	 */
 	ret = ioctl(fd, SPI_IOC_WR_MODE, &mode);
-	if (ret == -1)
+	if (ret == -1) {
 		pabort("can't set spi mode");
+	}
 
 	ret = ioctl(fd, SPI_IOC_RD_MODE, &mode);
-	if (ret == -1)
+	if (ret == -1) {
 		pabort("can't get spi mode");
+	}
 
 	/*
 	 * bits per word
@@ -125,11 +117,13 @@ static PyObject* openSPI(PyObject *self, PyObject *args, PyObject *kwargs)
 	PyDict_SetItem(retDict, PyBytes_FromString("bits"), PyLong_FromLong((long)bits));
 	PyDict_SetItem(retDict, PyBytes_FromString("speed"), PyLong_FromLong((long)speed));
 	PyDict_SetItem(retDict, PyBytes_FromString("delay"), PyLong_FromLong((long)delay));
+	PyDict_SetItem(retDict, PyBytes_FromString("fd"), PyLong_FromLong((long)fd));
 #else
 	PyDict_SetItem(retDict, PyString_FromString("mode"), PyInt_FromLong((long)mode));
 	PyDict_SetItem(retDict, PyString_FromString("bits"), PyInt_FromLong((long)bits));
 	PyDict_SetItem(retDict, PyString_FromString("speed"), PyInt_FromLong((long)speed));
 	PyDict_SetItem(retDict, PyString_FromString("delay"), PyInt_FromLong((long)delay));
+	PyDict_SetItem(retDict, PyString_FromString("fd"), PyInt_FromLong((long)fd));
 #endif
 
 
@@ -140,16 +134,75 @@ static PyObject* openSPI(PyObject *self, PyObject *args, PyObject *kwargs)
 
 static PyObject* transfer(PyObject* self, PyObject* arg)
 {
-	PyObject* transferTuple;
 
-	if(!PyArg_ParseTuple(arg, "O", &transferTuple))		// "O" - Gets non-NULL borrowed reference to Python argument.
-		return NULL;					// As far as I can tell, it's mostly just copying arg[0] into transferTuple
-								// and making sure at least one arg has been passed (I think)
+    uint8_t mode;
+    uint8_t bits = 8;
+    uint32_t speed = 500000;
+    uint16_t delay;
 
-	if(!PyTuple_Check(transferTuple))			// The only argument we support is a single tuple.
-		pabort("Only accepts a single tuple as an argument\n");
+    int ret = 0;
+    int fd;
+    
+	PyObject* dict;
+    PyObject* transferTuple;
 
 
+	// "O" - Gets non-NULL borrowed reference to Python argument.
+	// As far as I can tell, it's mostly just copying arg[0] into transferTuple
+	// and making sure at least one arg has been passed (I think)
+	if(!PyArg_ParseTuple(args, "OO", &dict, &transferTuple)) {		
+		return NULL;												
+	}									
+
+	// Check that dictionary was parsed correctly
+	if(!PyDict_Check(dict)) {
+		pabort("First argument must be a valid dictionary.");
+	}
+	// Check that transfer tuple was parsed correctly.
+	if(!PyTuple_Check(transferTuple)) {			
+		pabort("Second argument must be a tuple of bytes.\n");
+	}
+   
+   // Declare these variable separately so we can manually decrease reference
+   // counts when finished and free up memory
+#if PY_MAJOR_VERSION >= 3
+    PyObject* p_mode = PyBytes_FromString("mode");
+    PyObject* p_bits = PyBytes_FromString("bits");
+    PyObject* p_speed = PyBytes_FromString("speed");
+    PyObject* p_delay = PyBytes_FromString("delay");
+    PyObject* p_fd = PyBytes_FromString("fd");
+#else
+	PyObject* p_mode = PyString_FromString("mode");
+    PyObject* p_bits = PyString_FromString("bits");
+    PyObject* p_speed = PyString_FromString("speed");
+    PyObject* p_delay = PyString_FromString("delay");
+    PyObject* p_fd = PyString_FromString("fd");
+#endif
+
+	// Get SPI device parameters to use
+#if PY_MAJOR_VERSION >= 3
+    mode = (uint8_t) PyLong_AsUnsignedLong(PyDict_GetItem( dict, p_mode  ));
+    bits = (uint8_t) PyLong_AsUnsignedLong(PyDict_GetItem( dict, p_bits ));
+    speed = (uint32_t) PyLong_AsUnsignedLong(PyDict_GetItem( dict, p_speed ));
+    delay = (uint16_t) PyLong_AsUnsignedLong(PyDict_GetItem( dict, p_delay ));
+    fd = (int) PyLong_AsLong(PyDict_GetItem( dict, p_fd ));
+#else
+    mode = (uint8_t) PyInt_AsUnsignedLongMask(PyDict_GetItem( dict, p_mode  ));
+    bits = (uint8_t) PyInt_AsUnsignedLongMask(PyDict_GetItem( dict, p_bits ));
+    speed = (uint32_t) PyInt_AsUnsignedLongMask(PyDict_GetItem( dict, p_speed ));
+    delay = (uint16_t) PyInt_AsUnsignedLongMask(PyDict_GetItem( dict, p_delay ));
+    fd = (int) PyInt_AsLong(PyDict_GetItem( dict, p_fd ));
+#endif
+
+	// Decrease reference counts for tempoerary variables, freeing memory
+    Py_XDECREF(p_mode);
+    Py_XDECREF(p_bits);
+    Py_XDECREF(p_speed);
+    Py_XDECREF(p_delay);
+    Py_XDECREF(p_fd);
+
+
+//	 printf("Mode: %i, Bits: %i, Speed: %i, Delay: %i\n", mode, bits, speed, delay);
 	uint32_t tupleSize = PyTuple_Size(transferTuple);
 
 	uint8_t tx[tupleSize];
@@ -158,17 +211,18 @@ static PyObject* transfer(PyObject* self, PyObject* arg)
 
 	uint16_t i=0;
 
-	while(i < tupleSize)
-	{
+	while(i < tupleSize) {
 		tempItem = PyTuple_GetItem(transferTuple, i);		//
 #if PY_MAJOR_VERSION >= 3
-		if(!PyLong_Check(tempItem))
-#else
-		if(!PyInt_Check(tempItem))
-#endif
-		{
+		if(!PyLong_Check(tempItem)) {
 			pabort("non-integer contained in tuple\n");
 		}
+#else
+		if(!PyInt_Check(tempItem)) {
+			pabort("non-integer contained in tuple\n");
+		}
+#endif
+
 #if PY_MAJOR_VERSION >= 3
 		tx[i] = (uint8_t)PyLong_AsSsize_t(tempItem);
 #else
@@ -176,7 +230,6 @@ static PyObject* transfer(PyObject* self, PyObject* arg)
 #endif
 
 		i++;
-
 	}
 
 	struct spi_ioc_transfer tr = {
@@ -190,20 +243,41 @@ static PyObject* transfer(PyObject* self, PyObject* arg)
 	};
 
 	ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
-	if (ret < 1)
+	if (ret < 1) {
 		pabort("can't send spi message");
+	}
 
 	transferTuple = PyTuple_New(tupleSize);
-	for(i=0;i<tupleSize;i++)
+	for(i=0;i<tupleSize;i++) {
 		PyTuple_SetItem(transferTuple, i, Py_BuildValue("i",rx[i]));
+	}
 
-	return transferTuple;
+    return transferTuple;
 }
 
 
 static PyObject* closeSPI(PyObject* self,PyObject* args)
 {
-	close(fd);
+	PyObject* dict;
+
+	if(!PyArg_ParseTuple(args, "O", &dict)){		// "O" - Gets non-NULL borrowed reference to Python argument.
+		return NULL;					// As far as I can tell, it's mostly just copying arg[0] into transferTuple
+	}
+
+#if PY_MAJOR_VERSION >= 3
+    PyObject* p_fd = PyBytes_FromString("fd"); 
+#else
+    PyObject* p_fd = PyString_FromString("fd"); 
+#endif
+
+#if PY_MAJOR_VERSION >= 3
+    int fd = (int) PyLong_AsLong(PyDict_GetItem( dict, p_fd ));
+#else
+	int fd = (int) PyInt_AsLong(PyDict_GetItem( dict, p_fd ));
+#endif
+	
+    close(fd);
+    Py_XDECREF(p_fd);
 	Py_RETURN_NONE;
 }
 
