@@ -135,22 +135,47 @@ static PyObject* openSPI(PyObject *self, PyObject *args, PyObject *kwargs) {
 	//It would probably be a good idea to bin-down the passed arguement to the available values, and return
 	// that.
 
+#if PY_MAJOR_VERSION >= 3
+	PyObject* key_mode = PyBytes_FromString("mode");
+    PyObject* key_bits = PyBytes_FromString("bits");
+    PyObject* key_speed = PyBytes_FromString("speed");
+    PyObject* key_delay = PyBytes_FromString("delay");
+    PyObject* key_fd = PyBytes_FromString("fd");
+
+	PyObject* val_mode = PyLong_FromLong((long)mode);
+	PyObject* val_bits = PyLong_FromLong((long)bits);
+	PyObject* val_speed = PyLong_FromLong((long)speed);
+	PyObject* val_delay = PyLong_FromLong((long)delay);
+	PyObject* val_fd = PyLong_FromLong((long)fd);
+#else
+	PyObject* key_mode = PyString_FromString("mode");
+    PyObject* key_bits = PyString_FromString("bits");
+    PyObject* key_speed = PyString_FromString("speed");
+    PyObject* key_delay = PyString_FromString("delay");
+    PyObject* key_fd = PyString_FromString("fd");
+
+	PyObject* val_mode = PyInt_FromLong((long)mode);
+	PyObject* val_bits = PyInt_FromLong((long)bits);
+	PyObject* val_speed = PyInt_FromLong((long)speed);
+	PyObject* val_delay = PyInt_FromLong((long)delay);
+	PyObject* val_fd = PyInt_FromLong((long)fd);
+#endif
+
 	PyObject* retDict;
 	retDict = PyDict_New();
 
-#if PY_MAJOR_VERSION >= 3
-	PyDict_SetItem(retDict, PyBytes_FromString("mode"), PyLong_FromLong((long)mode));
-	PyDict_SetItem(retDict, PyBytes_FromString("bits"), PyLong_FromLong((long)bits));
-	PyDict_SetItem(retDict, PyBytes_FromString("speed"), PyLong_FromLong((long)speed));
-	PyDict_SetItem(retDict, PyBytes_FromString("delay"), PyLong_FromLong((long)delay));
-	PyDict_SetItem(retDict, PyBytes_FromString("fd"), PyLong_FromLong((long)fd));
-#else
-	PyDict_SetItem(retDict, PyString_FromString("mode"), PyInt_FromLong((long)mode));
-	PyDict_SetItem(retDict, PyString_FromString("bits"), PyInt_FromLong((long)bits));
-	PyDict_SetItem(retDict, PyString_FromString("speed"), PyInt_FromLong((long)speed));
-	PyDict_SetItem(retDict, PyString_FromString("delay"), PyInt_FromLong((long)delay));
-	PyDict_SetItem(retDict, PyString_FromString("fd"), PyInt_FromLong((long)fd));
-#endif
+	PyDict_SetItem(retDict, key_mode, val_mode);
+	PyDict_SetItem(retDict, key_bits, val_bits);
+	PyDict_SetItem(retDict, key_speed, val_speed);
+	PyDict_SetItem(retDict, key_delay, val_delay);
+	PyDict_SetItem(retDict, key_fd, val_fd);
+
+	Py_XDECREF(key_mode);Py_XDECREF(val_mode);
+	Py_XDECREF(key_bits);Py_XDECREF(val_bits);
+	Py_XDECREF(key_speed);Py_XDECREF(val_speed);
+	Py_XDECREF(key_delay);Py_XDECREF(val_delay);
+	Py_XDECREF(key_fd);Py_XDECREF(val_fd);
+
 	return retDict;
 }
 
