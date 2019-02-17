@@ -300,7 +300,7 @@ static PyMethodDef SpiMethods[] =
 {
 	{"openSPI", (PyCFunction)openSPI, METH_VARARGS | METH_KEYWORDS, "Open SPI Port."},
 	{"transfer", (PyCFunction)transfer, METH_VARARGS, "Transfer data."},
-	{"closeSPI", (PyCFunction)closeSPI, METH_NOARGS, "Close SPI port."},
+	{"closeSPI", (PyCFunction)closeSPI, METH_VARARGS, "Close SPI port."},
 	{NULL, NULL, 0, NULL}
 };
 

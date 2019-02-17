@@ -8,7 +8,7 @@ device_0 =  spi.openSPI(device="/dev/spidev0.0",
 
 # Open file descriptor for
 # spi device 0 using the CE1 pin for chip select
-device_1 = spi.openSPI(device="dev/spidev0.1",
+device_1 = spi.openSPI(device="/dev/spidev0.1",
                        mode=0,
                        speed=1000000)
 
