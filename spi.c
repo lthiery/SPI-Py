@@ -34,8 +34,17 @@ static void pabort(const char *s)
 	abort();
 }
 
-static PyObject* openSPI(PyObject *self, PyObject *args, PyObject *kwargs)
-{
+static PyObject* openSPI(PyObject *self, PyObject *args, PyObject *kwargs) {
+
+	// Default parameters
+    char *device = "/dev/spidev0.0";
+    uint8_t mode=0;
+    uint8_t bits = 8;
+    uint32_t speed = 500000;
+    uint16_t delay=0;
+
+    int ret = 0;
+    int fd;
 
 	static char* kwlist[] = {"device", "mode", "bits", "speed", "delay", NULL};
 
@@ -125,15 +134,12 @@ static PyObject* openSPI(PyObject *self, PyObject *args, PyObject *kwargs)
 	PyDict_SetItem(retDict, PyString_FromString("delay"), PyInt_FromLong((long)delay));
 	PyDict_SetItem(retDict, PyString_FromString("fd"), PyInt_FromLong((long)fd));
 #endif
-
-
 	return retDict;
 }
 
 
 
-static PyObject* transfer(PyObject* self, PyObject* arg)
-{
+static PyObject* transfer(PyObject* self, PyObject* arg) {
 
     uint8_t mode;
     uint8_t bits = 8;
@@ -256,11 +262,10 @@ static PyObject* transfer(PyObject* self, PyObject* arg)
 }
 
 
-static PyObject* closeSPI(PyObject* self,PyObject* args)
-{
+static PyObject* closeSPI(PyObject* self,PyObject* args) {
 	PyObject* dict;
 
-	if(!PyArg_ParseTuple(args, "O", &dict)){		// "O" - Gets non-NULL borrowed reference to Python argument.
+	if(!PyArg_ParseTuple(args, "O", &dict)) {		// "O" - Gets non-NULL borrowed reference to Python argument.
 		return NULL;					// As far as I can tell, it's mostly just copying arg[0] into transferTuple
 	}
 
