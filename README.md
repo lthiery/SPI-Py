@@ -47,11 +47,14 @@ The device keyword can be either "/dev/spidev0.0" or "/dev/spidev0.1". The diffe
 
 ### Use the returned device handle to conduct an SPI transaction
 <pre>
-data_out = (0xff,0x00,0xff)
+data_out = (0xFF,0x00,0xFF)
+data_back = (0x00, 0x00, 0x00)
 data_back = spi.transfer(device_0, data_out)
 </pre>
 
 The above would write the 3 bytes contained in data_out and copy the received data to data_back.
+To verify that this works connect GPIO 10 (MOSI, physical pin 19) to GPIO 9 (MISO, physical pin 21) 
+in a loop back. You should see that data_out now equals data_back.
 
 ### Close the spi device
 <pre>

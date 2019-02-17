@@ -263,9 +263,14 @@ static PyObject* transfer(PyObject* self, PyObject* args) {
 		pabort("can't send spi message");
 	}
 
+	// This explains why the input data are not overwritten by the received data
+	// If you delete this line you could have the function overwrite the input
+	// data with the received data. (Works in Python 3, not Python 2)
 	transferTuple = PyTuple_New(tupleSize);
 	for(i=0;i<tupleSize;i++) {
-		PyTuple_SetItem(transferTuple, i, Py_BuildValue("i",rx[i]));
+		if(PyTuple_SetItem(transferTuple, i, Py_BuildValue("i",rx[i]))) {
+			printf("spi: can't set value in data tuple.\n");
+		}
 	}
 
     return transferTuple;
