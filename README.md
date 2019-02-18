@@ -1,8 +1,9 @@
 SPI-Py: Hardware SPI as a C Extension for Python
 ======
 
-COPYRIGHT (C) 2012 Louis Thiery. All rights reserved.   
-Further work by Connor Wolf, Nathan Leefer.
+COPYRIGHT (C) 2012 Louis Thiery. All rights reserved. Further work by Connor Wolf.
+
+Forked in 2019 by Nathan Leefer to fix memory handling in the C extension.
 
 This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License V2 as published by the Free Software Foundation.
 
