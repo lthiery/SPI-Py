@@ -17,16 +17,15 @@ def main():
     data_out = (0xFF, 0x00, 0xFF)
 
     # This is not necessary, not just demonstrate loop-back
-    data_back = (0x00, 0x00, 0x00)
-
-    data_back = spi.transfer(device_0, data_out)
+    data_in = (0x00, 0x00, 0x00)
+    data_in = spi.transfer(device_0, data_out)
     print("Received from device 0:")
-    print(data_back)
+    print(data_in)
 
-    data_back = (0x00, 0x00, 0x00)
-    data_back = spi.transfer(device_1, data_out)
+    data_in = (0x00, 0x00, 0x00)
+    data_in = spi.transfer(device_1, data_out)
     print("Received from device 1:")
-    print(data_back)
+    print(data_in)
 
     # Close file descriptors
     spi.closeSPI(device_0)

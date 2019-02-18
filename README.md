@@ -32,7 +32,7 @@ The next section covers these in detail.
 
 ## Example usage
 
-The below commands can be found in the (test_script.py)[test_script.py] file.
+The below commands can be found in the [test_script.py](test_script.py) file.
 
 ### After installing the library, import the spi module to your Python code via :
 <pre>
@@ -43,20 +43,25 @@ import spi
 <pre>
 device_0 = spi.openSPI(device="/dev/spidev0.0",mode=0,speed=500000,bits=8,delay=0)
 </pre>
-The device keyword can be either "/dev/spidev0.0" or "/dev/spidev0.1". The difference refers to which chip select pin is used by the SPI device driver. The mode keyword can be 0,1,2, or 3, and many SPI devices can operate up to 8000000 Hz speed, however it is recommended to check your data sheet. See the (Raspberry Pi docs)[https://www.raspberrypi.org/documentation/hardware/raspberrypi/spi/README.md] for detailed explanation of these parameters.
+The device keyword can be either "/dev/spidev0.0" or "/dev/spidev0.1". The difference refers to which chip select pin is used by the SPI device driver. The mode keyword can be 0,1,2, or 3, and many SPI devices can operate up to 8000000 Hz speed, however it is recommended to check your data sheet. See the [Raspberry Pi docs](https://www.raspberrypi.org/documentation/hardware/raspberrypi/spi/README.md) for detailed explanation of these parameters.
 
 ### Use the returned device handle to conduct an SPI transaction
 <pre>
 data_out = (0xFF,0x00,0xFF)
-data_back = (0x00, 0x00, 0x00)
-data_back = spi.transfer(device_0, data_out)
+data_in = (0x00, 0x00, 0x00)
+data_in = spi.transfer(device_0, data_out)
 </pre>
 
-The above would write the 3 bytes contained in data_out and copy the received data to data_back.
+The above would write the 3 bytes contained in data_out and copy the received data to data_in.
 To verify that this works connect GPIO 10 (MOSI, physical pin 19) to GPIO 9 (MISO, physical pin 21) 
-in a loop back. You should see that data_out now equals data_back.
+in a loop back. You should see that data_out now equals data_in.
 
 ### Close the file descriptor for your SPI device
 <pre>
 spi.closeSPI(device_0)
 </pre>
+
+## Memory leak
+
+The [memory_leak.py](/memory_leak.py) script continuously executes a simple transaction on /dev/spidev0.0.
+There does not appear to be a memory leak in this use case.

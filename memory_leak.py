@@ -13,11 +13,11 @@ def transact():
 	print(device_0)
 
     # This is not necessary, not just demonstrate loop-back
-	data_back = (0x00, 0x00, 0x00)
-
-	data_back = spi.transfer(device_0, data_out)
+	data_in = (0x00, 0x00, 0x00)
+	data_in = spi.transfer(device_0, data_out)
 	print("Received from device 0:")
-	print(data_back)
+	print(data_in)
+
 	spi.closeSPI(device_0)
 	print(device_0)
 	print("**")
