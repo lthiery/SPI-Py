@@ -42,6 +42,7 @@ static PyObject* openSPI(PyObject *self, PyObject *args, PyObject *kwargs) {
     uint8_t bits = 8;
     uint32_t speed = 500000;
     uint16_t delay=0;
+    uint8_t temp;
 
     int ret = 0;
     int fd;
@@ -93,14 +94,19 @@ static PyObject* openSPI(PyObject *self, PyObject *args, PyObject *kwargs) {
     }
 
     // Set mode of SPI device
-    ret = ioctl(fd, SPI_IOC_WR_MODE, &spi_mode);
+    ret = ioctl(fd, SPI_IOC_RD_MODE, &temp);
+    if (ret == -1) {
+        pabort("can't get spi mode");
+    }
+    temp &= ~(SPI_CPHA | SPI_CPOL);
+    temp |= spi_mode;
+    ret = ioctl(fd, SPI_IOC_WR_MODE, &temp);
     if (ret == -1) {
         pabort("can't set spi mode");
     }
-
-    ret = ioctl(fd, SPI_IOC_RD_MODE, &spi_mode);
-    if (ret == -1) {
-        pabort("can't get spi mode");
+    ret = ioctl(fd, SPI_IOC_RD_MODE, &temp);
+    if (ret == -1 || ((temp & (SPI_CPHA|SPI_CPOL)) != spi_mode)) {
+        pabort("can't modify spi mode");
     }
 
     /*
